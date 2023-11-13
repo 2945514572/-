@@ -1,0 +1,72 @@
+import requests
+# 导入时间模块
+import time
+import hashlib
+from Cryptodome.Cipher import AES
+import base64
+import re
+
+def md5_hash(date):
+    string = f"client=fanyideskweb&mysticTime={date}&product=webfanyi&key=fsdsogkndfokasodnaso"
+    md5 = hashlib.md5()
+    md5.update(string.encode('utf-8'))
+    sign = md5.hexdigest()
+    return sign
+
+
+def datas(t):
+    o = "ydsecret://query/key/B*RGygVywfNBwpmBaZg*WT7SIOUP2T0C9WHMZN39j^DAdaZhAnxvGcCY6VYFwnHl"
+    n = "ydsecret://query/iv/C@lZe2YzHtZ2CYgaXKSVfsb7Y4QWHjITPPZ0nQp87fBeJ!Iv6v^6fvi2WN@bYpJ4"
+    a_md5 = hashlib.md5(o.encode('utf-8')).digest()
+    a = bytearray(a_md5)
+    c_md5 = hashlib.md5(n.encode('utf-8')).digest()
+    c = bytearray(c_md5)
+    i = AES.new(a, AES.MODE_CBC, c) # 解码器
+    s = i.decrypt(base64.urlsafe_b64decode(t)).decode('utf-8')
+    return s
+
+
+word = input('请输入你要翻译的内容: ')
+date = int(time.time() * 1000)
+sign = md5_hash(date)
+# 模拟浏览器 headers 请求头,字典数据 <构建完整的键值对>
+headers = {
+    'Cookie': 'OUTFOX_SEARCH_USER_ID=1145144101@10.108.162.133; OUTFOX_SEARCH_USER_ID_NCOO=1355988803.4566927',
+    'Host': 'dict.youdao.com',
+    'Origin': 'https://fanyi.youdao.com',
+    'Referer': 'https://fanyi.youdao.com/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+}
+# 请求链接
+url = 'https://dict.youdao.com/webtranslate'
+# 请求参数
+data = {
+    'i': word,
+    'from': 'auto',
+    'to': '',
+    'domain': '0',
+    'dictResult': 'true',
+    'keyid': 'webfanyi',
+    'sign': sign,
+    'client': 'fanyideskweb',
+    'product': 'webfanyi',
+    'appVersion': '1.0.0',
+    'vendor': 'web',
+    'pointParam': 'client,mysticTime,product',
+    'mysticTime': date,
+    'keyfrom': 'fanyi.web',
+    'mid': '1',
+    'screen': '1',
+    'model': '1',
+    'network': 'wifi',
+    'abtest': '0',
+    'yduuid': 'abcdefg',
+}
+# 发送请求 -> <Response [500]> <Response [200]>
+response = requests.post(url=url, data=data, headers=headers)
+# 获取服务器返回响应数据
+html_data = response.text
+result = datas(html_data)
+# print(result)
+translateResult = re.findall('"tran":"(.*?)"', result)[0]
+print('翻译结果是:', translateResult)
